@@ -148,7 +148,7 @@ PARA VINCULAR OS USUÁRIOS À TABELA 'usuarios':
 -- e substitua abaixo:
 
 INSERT INTO usuarios (auth_id, nome, email, tipo) VALUES
-('UUID_DO_ADMIN_AQUI', 'Admin', 'admin@serraria.com', 'admin'),
+('UUID_DO_ADMIN_AQUI', 'Andre Costa', 'admin@serraria.com', 'admin'),
 ('UUID_DO_CLEIRTON_AQUI', 'Cleirton', 'cleirton@serraria.com', 'marceneiro'),
 ('UUID_DO_DEDE_AQUI', 'Dedé', 'dede@serraria.com', 'marceneiro'),
 ('UUID_DO_RODRIGO_AQUI', 'Rodrigo', 'rodrigo@serraria.com', 'marceneiro'),

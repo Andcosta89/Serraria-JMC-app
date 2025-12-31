@@ -23,7 +23,7 @@ Siga este guia passo a passo para configurar o banco de dados no Supabase.
 
 | Email | Senha | Quem é |
 |-------|-------|--------|
-| admin@serraria.com | admin123 | Você (Admin) |
+| admin@serraria.com | admin123 | Você (Andre Costa) |
 | cleirton@serraria.com | cleirton123 | Marceneiro |
 | dede@serraria.com | dede123 | Marceneiro |
 | rodrigo@serraria.com | rodrigo123 | Marceneiro |
@@ -43,7 +43,7 @@ Após criar os 5 usuários:
 
 ```sql
 INSERT INTO usuarios (auth_id, nome, email, tipo) VALUES
-('UUID_DO_ADMIN', 'Admin', 'admin@serraria.com', 'admin'),
+('UUID_DO_ADMIN', 'Andre Costa', 'admin@serraria.com', 'admin'),
 ('UUID_DO_CLEIRTON', 'Cleirton', 'cleirton@serraria.com', 'marceneiro'),
 ('UUID_DO_DEDE', 'Dedé', 'dede@serraria.com', 'marceneiro'),
 ('UUID_DO_RODRIGO', 'Rodrigo', 'rodrigo@serraria.com', 'marceneiro'),
@@ -61,7 +61,7 @@ INSERT INTO usuarios (auth_id, nome, email, tipo) VALUES
 
 ## Credenciais de Acesso
 
-### Admin (Você)
+### Admin (Andre Costa)
 - **Email:** admin@serraria.com
 - **Senha:** admin123
 
