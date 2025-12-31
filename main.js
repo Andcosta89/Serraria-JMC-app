@@ -70,7 +70,7 @@ function renderLoading() {
 function renderLogin() {
     document.getElementById('app').innerHTML = `
         <div class="login-page">
-            <div class="login-logo">🪵 Serraria</div>
+            <img src="logo.jpg" alt="JMC Madeiras" class="login-brand-img">
             <div class="login-subtitle">Gerenciador de Serviços</div>
             
             <div class="card login-card">

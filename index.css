@@ -357,10 +357,19 @@ h3 {
     background: radial-gradient(ellipse at top, var(--bg-secondary) 0%, var(--bg-primary) 100%);
 }
 
+.login-brand-img {
+    width: 100%;
+    max-width: 280px;
+    height: auto;
+    margin-bottom: var(--space-xl);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg);
+}
+
 .login-logo {
     font-size: var(--font-size-2xl);
     font-weight: 700;
-    margin-bottom: var(--space-sm);
+    margin-bottom: var(--space-xs);
     background: var(--accent-gradient);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
