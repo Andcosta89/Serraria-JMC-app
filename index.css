@@ -67,17 +67,45 @@
 }
 
 /* Utilities */
-.mt-xs { margin-top: var(--space-xs); }
-.mt-sm { margin-top: var(--space-sm); }
-.mt-md { margin-top: var(--space-md); }
-.mt-lg { margin-top: var(--space-lg); }
-.mt-xl { margin-top: var(--space-xl); }
+.mt-xs {
+    margin-top: var(--space-xs);
+}
 
-.mb-xs { margin-bottom: var(--space-xs); }
-.mb-sm { margin-bottom: var(--space-sm); }
-.mb-md { margin-bottom: var(--space-md); }
-.mb-lg { margin-bottom: var(--space-lg); }
-.mb-xl { margin-bottom: var(--space-xl); }
+.mt-sm {
+    margin-top: var(--space-sm);
+}
+
+.mt-md {
+    margin-top: var(--space-md);
+}
+
+.mt-lg {
+    margin-top: var(--space-lg);
+}
+
+.mt-xl {
+    margin-top: var(--space-xl);
+}
+
+.mb-xs {
+    margin-bottom: var(--space-xs);
+}
+
+.mb-sm {
+    margin-bottom: var(--space-sm);
+}
+
+.mb-md {
+    margin-bottom: var(--space-md);
+}
+
+.mb-lg {
+    margin-bottom: var(--space-lg);
+}
+
+.mb-xl {
+    margin-bottom: var(--space-xl);
+}
 
 
 /* Reset & Base */
@@ -967,4 +995,12 @@ h3 {
     .stats-grid {
         grid-template-columns: repeat(4, 1fr);
     }
+}
+
+/* Active Filter State */
+.stat-card.active-filter {
+    border: 1px solid var(--accent-primary);
+    background: rgba(46, 125, 50, 0.2);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-glow);
 }

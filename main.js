@@ -8,7 +8,8 @@ const state = {
     marceneiros: [],
     servicosNovos: 0,
     resumoFinanceiro: null,
-    loading: true
+    loading: true,
+    filtroAdmin: 'todos' // filtro inicial
 };
 
 // ========== INICIALIZAÇÃO ==========
@@ -153,19 +154,23 @@ function renderAdminDashboard() {
             </div>
             
             <div class="stats-grid">
-                <div class="stat-card">
+                <div class="stat-card ${state.filtroAdmin === 'todos' ? 'active-filter' : ''}" 
+                     onclick="filtrarServicosAdmin('todos')" style="cursor: pointer">
                     <div class="stat-value">${stats.total}</div>
                     <div class="stat-label">Total</div>
                 </div>
-                <div class="stat-card">
+                <div class="stat-card ${state.filtroAdmin === 'pendente' ? 'active-filter' : ''}" 
+                     onclick="filtrarServicosAdmin('pendente')" style="cursor: pointer">
                     <div class="stat-value warning">${stats.pendentes}</div>
                     <div class="stat-label">Pendentes</div>
                 </div>
-                <div class="stat-card">
+                <div class="stat-card ${state.filtroAdmin === 'andamento' ? 'active-filter' : ''}" 
+                     onclick="filtrarServicosAdmin('andamento')" style="cursor: pointer">
                     <div class="stat-value info">${stats.emAndamento}</div>
                     <div class="stat-label">Em Andamento</div>
                 </div>
-                <div class="stat-card">
+                <div class="stat-card ${state.filtroAdmin === 'concluido' ? 'active-filter' : ''}" 
+                     onclick="filtrarServicosAdmin('concluido')" style="cursor: pointer">
                     <div class="stat-value positive">${stats.concluidos}</div>
                     <div class="stat-label">Concluídos</div>
                 </div>
@@ -206,11 +211,17 @@ function renderAdminDashboard() {
 }
 
 function renderServicosTab() {
-    if (state.servicos.length === 0) {
+    let servicosFiltrados = state.servicos;
+
+    if (state.filtroAdmin !== 'todos') {
+        servicosFiltrados = state.servicos.filter(s => s.status === state.filtroAdmin);
+    }
+
+    if (servicosFiltrados.length === 0) {
         return `
             <div class="empty-state">
                 <div class="empty-state-icon">📋</div>
-                <p>Nenhum serviço cadastrado</p>
+                <p>Nenhum serviço encontrado para este filtro</p>
                 <button class="btn btn-primary mt-md" onclick="openNovoServicoModal()">Criar primeiro serviço</button>
             </div>
         `;
@@ -218,7 +229,7 @@ function renderServicosTab() {
 
     return `
         <div class="service-list">
-            ${state.servicos.map(servico => renderServicoCard(servico, true)).join('')}
+            ${servicosFiltrados.map(servico => renderServicoCard(servico, true)).join('')}
         </div>
     `;
 }
@@ -751,6 +762,11 @@ window.handleExcluirServico = async function (id) {
         console.error('Erro ao excluir:', error);
         alert('Erro ao excluir serviço. Verifique se você executou o script de permissões no Supabase.');
     }
+};
+
+window.filtrarServicosAdmin = function (status) {
+    state.filtroAdmin = status;
+    renderDashboard();
 };
 
 // ========== UTILITÁRIOS ==========
