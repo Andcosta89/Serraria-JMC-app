@@ -109,6 +109,15 @@ export async function atualizarServico(id, dados) {
     return data;
 }
 
+export async function deleteServico(id) {
+    const { error } = await supabase
+        .from('servicos')
+        .delete()
+        .eq('id', id);
+
+    if (error) throw error;
+}
+
 export async function marcarComoVisualizado(id) {
     return atualizarServico(id, { visualizado: true });
 }

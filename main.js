@@ -141,7 +141,7 @@ function renderAdminDashboard() {
         <header class="header">
             <div class="header-title">🪵 Serraria</div>
             <div class="header-user">
-                <span>${state.usuario.nome}</span>
+                <span>${state.usuario.nome} <small style="opacity: 0.7">(Admin)</small></span>
                 <button class="header-avatar" onclick="handleLogout()">${state.usuario.nome.charAt(0)}</button>
             </div>
         </header>
@@ -413,6 +413,12 @@ function renderServicoCard(servico, isAdmin) {
             <div class="service-value">${formatarMoeda(servico.valor)}</div>
             
             ${actions}
+            ${isAdmin ? `
+                <div class="service-actions mt-sm">
+                    <button class="btn btn-secondary btn-sm" onclick="openEditarServicoModal('${servico.id}')">✏️ Editar</button>
+                    <button class="btn btn-danger btn-sm" onclick="handleExcluirServico('${servico.id}')">🗑️ Excluir</button>
+                </div>
+            ` : ''}
         </div>
     `;
 }
@@ -432,7 +438,9 @@ function openNovoServicoModal() {
                     <button class="modal-close" onclick="closeModal()">&times;</button>
                 </div>
                 
+                
                 <form id="servico-form">
+                    <input type="hidden" id="servico-id">
                     <div class="modal-body">
                         <div class="form-group">
                             <label class="form-label">Título *</label>
@@ -585,19 +593,27 @@ async function handleSalvarServico(e) {
     btn.textContent = 'Salvando...';
 
     try {
-        let foto_url = null;
-        if (imagemSelecionada) {
-            foto_url = await api.uploadImagem(imagemSelecionada);
-        }
-
-        await api.criarServico({
+        const id = document.getElementById('servico-id').value;
+        const dados = {
             titulo: document.getElementById('titulo').value,
             descricao: document.getElementById('descricao').value,
             marceneiro_id: document.getElementById('marceneiro_id').value,
             valor: document.getElementById('valor').value,
-            prazo: document.getElementById('prazo').value,
-            foto_url
-        });
+            prazo: document.getElementById('prazo').value
+        };
+
+        let foto_url = null;
+        if (imagemSelecionada) {
+            foto_url = await api.uploadImagem(imagemSelecionada);
+            dados.foto_url = foto_url;
+        }
+
+        if (id) {
+            await api.atualizarServico(id, dados);
+        } else {
+            dados.foto_url = foto_url; // Para criação, se houver foto
+            await api.criarServico(dados);
+        }
 
         imagemSelecionada = null;
         closeModal();
@@ -685,6 +701,57 @@ window.handleLogout = async function () {
 window.closeModal = closeModal;
 window.openNovoServicoModal = openNovoServicoModal;
 window.openNovoPagamentoModal = openNovoPagamentoModal;
+
+window.openEditarServicoModal = function (id) {
+    const servico = state.servicos.find(s => s.id === id);
+    if (!servico) return;
+
+    openNovoServicoModal();
+
+    // Atualizar título do modal
+    document.querySelector('.modal-title').textContent = 'Editar Serviço';
+    document.getElementById('btn-salvar').textContent = 'Atualizar Serviço';
+
+    // Preencher campos
+    document.getElementById('servico-id').value = servico.id;
+    document.getElementById('titulo').value = servico.titulo;
+    document.getElementById('descricao').value = servico.descricao || '';
+    document.getElementById('marceneiro_id').value = servico.marceneiro_id; // Assume marceneiro_id changes are allowed
+    document.getElementById('valor').value = servico.valor;
+    if (servico.prazo) {
+        document.getElementById('prazo').value = new Date(servico.prazo).toISOString().split('T')[0];
+    }
+
+    // Mostrar preview da imagem se existir
+    if (servico.foto_url) {
+        document.getElementById('image-upload-container').innerHTML = `
+            <div class="image-preview">
+                <img src="${servico.foto_url}" alt="Preview">
+                <div class="text-sm text-center text-muted mt-xs">Foto atual</div>
+                <!-- Nota: Não permitimos remover a foto atual facilmente nesta UI simplificada, apenas substituir -->
+            </div>
+            <div class="mt-xs">
+                <label class="image-upload" id="image-upload" style="height: auto; padding: 10px;">
+                    <input type="file" accept="image/*" onchange="handleImageUpload(event)">
+                    <div class="text-sm">Alterar foto</div>
+                </label>
+            </div>
+        `;
+    }
+};
+
+window.handleExcluirServico = async function (id) {
+    if (!confirm('Tem certeza que deseja excluir este serviço? Esta ação não pode ser desfeita.')) return;
+
+    try {
+        await api.deleteServico(id);
+        await carregarDados();
+        renderDashboard();
+    } catch (error) {
+        console.error('Erro ao excluir:', error);
+        alert('Erro ao excluir serviço. Verifique se você executou o script de permissões no Supabase.');
+    }
+};
 
 // ========== UTILITÁRIOS ==========
 
