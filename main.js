@@ -6,6 +6,7 @@ const state = {
     usuario: null,
     servicos: [],
     marceneiros: [],
+    produtosPendentes: [], // NOVO: produtos em backlog
     servicosNovos: 0,
     resumoFinanceiro: null,
     loading: true,
@@ -48,6 +49,7 @@ async function carregarDados() {
             state.servicos = await api.getServicos();
             state.estatisticas = await api.getEstatisticasAdmin();
             state.saldosMarceneiros = await api.getSaldosMarceneiros();
+            state.produtosPendentes = await api.getProdutosPendentes(); // NOVO
         } else {
             state.servicos = await api.getServicos({ marceneiro_id: state.usuario.id });
             state.servicosNovos = await api.getServicosNovos(state.usuario.id);
@@ -178,6 +180,10 @@ function renderAdminDashboard() {
             
             <div class="tabs">
                 <button class="tab active" data-tab="servicos">Serviços</button>
+                <button class="tab" data-tab="produtos">
+                    Produtos Pendentes
+                    ${state.produtosPendentes.length > 0 ? `<span class="badge badge-novo">${state.produtosPendentes.length}</span>` : ''}
+                </button>
                 <button class="tab" data-tab="marceneiros">Marceneiros</button>
                 <button class="tab" data-tab="pagamentos">Pagamentos</button>
             </div>
@@ -201,6 +207,8 @@ function renderAdminDashboard() {
             const tabName = e.target.dataset.tab;
             if (tabName === 'servicos') {
                 document.getElementById('tab-content').innerHTML = renderServicosTab();
+            } else if (tabName === 'produtos') {
+                document.getElementById('tab-content').innerHTML = renderProdutosTab();
             } else if (tabName === 'marceneiros') {
                 document.getElementById('tab-content').innerHTML = renderMarceneirosTab();
             } else if (tabName === 'pagamentos') {

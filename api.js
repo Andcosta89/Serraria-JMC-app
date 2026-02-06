@@ -276,6 +276,94 @@ export async function getSaldosMarceneiros() {
     return saldos;
 }
 
+// ========== PRODUTOS PENDENTES ==========
+
+export async function getProdutosPendentes() {
+    const { data, error } = await supabase
+        .from('produtos_pendentes')
+        .select('*')
+        .eq('atribuido', false)
+        .order('ordem', { ascending: true })
+        .order('criado_em', { ascending: false });
+
+    if (error) throw error;
+    return data;
+}
+
+export async function criarProdutoPendente(produto) {
+    const { data, error } = await supabase
+        .from('produtos_pendentes')
+        .insert([{
+            nome_produto: produto.nome_produto,
+            descricao: produto.descricao,
+            foto_url: produto.foto_url,
+            prioridade: produto.prioridade || 'media',
+            ordem: produto.ordem || 0
+        }])
+        .select()
+        .single();
+
+    if (error) throw error;
+    return data;
+}
+
+export async function atualizarProdutoPendente(id, dados) {
+    const { data, error } = await supabase
+        .from('produtos_pendentes')
+        .update(dados)
+        .eq('id', id)
+        .select()
+        .single();
+
+    if (error) throw error;
+    return data;
+}
+
+export async function deleteProdutoPendente(id) {
+    const { error } = await supabase
+        .from('produtos_pendentes')
+        .delete()
+        .eq('id', id);
+
+    if (error) throw error;
+}
+
+export async function converterProdutoEmServico(produtoId, dadosServico) {
+    // 1. Buscar produto
+    const { data: produto } = await supabase
+        .from('produtos_pendentes')
+        .select('*')
+        .eq('id', produtoId)
+        .single();
+
+    if (!produto) throw new Error('Produto não encontrado');
+
+    // 2. Criar serviço com dados do produto + dados adicionais
+    const novoServico = {
+        titulo: produto.nome_produto,
+        descricao: produto.descricao,
+        foto_url: produto.foto_url,
+        marceneiro_id: dadosServico.marceneiro_id,
+        valor: dadosServico.valor,
+        prazo: dadosServico.prazo,
+        status: 'pendente',
+        visualizado: false
+    };
+
+    const { data: servico, error: servicoError } = await supabase
+        .from('servicos')
+        .insert([novoServico])
+        .select()
+        .single();
+
+    if (servicoError) throw servicoError;
+
+    // 3. Marcar produto como atribuído
+    await atualizarProdutoPendente(produtoId, { atribuido: true });
+
+    return servico;
+}
+
 // ========== UPLOAD DE IMAGEM ==========
 
 export async function uploadImagem(file) {
