@@ -258,6 +258,61 @@ function renderMarceneirosTab() {
     `;
 }
 
+function renderProdutosTab() {
+    if (state.produtosPendentes.length === 0) {
+        return `
+            <div class="empty-state">
+                <div class="empty-state-icon">📦</div>
+                <p>Nenhum produto pendente</p>
+                <button class="btn btn-primary mt-md" onclick="openNovoProdutoModal()">Cadastrar primeiro produto</button>
+            </div>
+        `;
+    }
+
+    const prioridadeBadge = {
+        alta: '<span class="badge badge-prioridade-alta">Alta</span>',
+        media: '<span class="badge badge-prioridade-media">Média</span>',
+        baixa: '<span class="badge badge-prioridade-baixa">Baixa</span>'
+    };
+
+    return `
+        <div class="mb-md">
+            <button class="btn btn-primary btn-block" onclick="openNovoProdutoModal()">
+                ➕ Cadastrar Produto
+            </button>
+        </div>
+        <div class="service-list">
+            ${state.produtosPendentes.map(produto => `
+                <div class="card service-card produto-card">
+                    ${produto.foto_url ? `<img src="${produto.foto_url}" class="service-image" alt="Foto do produto">` : ''}
+                    
+                    <div class="service-header">
+                        <div class="service-title">${produto.nome_produto}</div>
+                        ${prioridadeBadge[produto.prioridade]}
+                    </div>
+                    
+                    ${produto.descricao ? `<p class="text-muted">${produto.descricao}</p>` : ''}
+                    
+                    <div class="service-meta">
+                        <div class="service-meta-item">📅 ${formatarData(produto.criado_em)}</div>
+                    </div>
+                    
+                    <div class="service-actions mt-md">
+                        <button class="btn btn-primary" onclick="openAtribuirMarceneiroModal('${produto.id}')">
+                            👷 Atribuir ao Marceneiro
+                        </button>
+                    </div>
+                    
+                    <div class="service-actions mt-sm">
+                        <button class="btn btn-secondary btn-sm" onclick="openEditarProdutoModal('${produto.id}')">✏️ Editar</button>
+                        <button class="btn btn-danger btn-sm" onclick="handleExcluirProduto('${produto.id}')">🗑️ Excluir</button>
+                    </div>
+                </div>
+            `).join('')}
+        </div>
+    `;
+}
+
 function renderPagamentosTab() {
     return `
         <div class="service-list">
@@ -566,6 +621,149 @@ function openNovoPagamentoModal() {
     document.getElementById('pagamento-form').addEventListener('submit', handleSalvarPagamento);
 }
 
+function openNovoProdutoModal() {
+    document.getElementById('modal-container').innerHTML = `
+        <div class="modal-overlay" onclick="closeModal(event)">
+            <div class="modal" onclick="event.stopPropagation()">
+                <div class="modal-header">
+                    <div class="modal-title">Cadastrar Produto</div>
+                    <button class="modal-close" onclick="closeModal()">&times;</button>
+                </div>
+                
+                <form id="produto-form">
+                    <input type="hidden" id="produto-id">
+                    <div class="modal-body">
+                        <div class="form-group">
+                            <label class="form-label">Nome do Produto *</label>
+                            <input type="text" class="form-input" id="nome_produto" required placeholder="Ex: Mesa de madeira">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Descrição</label>
+                            <textarea class="form-textarea" id="descricao_produto" placeholder="Detalhes do produto..."></textarea>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Prioridade *</label>
+                            <select class="form-select" id="prioridade" required>
+                                <option value="media">Média</option>
+                                <option value="alta">Alta</option>
+                                <option value="baixa">Baixa</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Foto do Produto</label>
+                            <div id="produto-image-upload-container">
+                                <label class="image-upload" id="produto-image-upload">
+                                    <input type="file" accept="image/*" onchange="handleProdutoImageUpload(event)">
+                                    <div class="image-upload-icon">📷</div>
+                                    <div class="image-upload-text">Clique para adicionar foto</div>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="modal-footer">
+                        <button type="submit" class="btn btn-primary btn-block" id="btn-salvar-produto">
+                            Salvar Produto
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    `;
+
+    document.getElementById('produto-form').addEventListener('submit', handleSalvarProduto);
+}
+
+function openEditarProdutoModal(id) {
+    const produto = state.produtosPendentes.find(p => p.id === id);
+    if (!produto) return;
+
+    openNovoProdutoModal();
+
+    document.querySelector('.modal-title').textContent = 'Editar Produto';
+    document.getElementById('btn-salvar-produto').textContent = 'Atualizar Produto';
+
+    document.getElementById('produto-id').value = produto.id;
+    document.getElementById('nome_produto').value = produto.nome_produto;
+    document.getElementById('descricao_produto').value = produto.descricao || '';
+    document.getElementById('prioridade').value = produto.prioridade;
+
+    if (produto.foto_url) {
+        document.getElementById('produto-image-upload-container').innerHTML = `
+            <div class="image-preview">
+                <img src="${produto.foto_url}" alt="Preview">
+                <div class="text-sm text-center text-muted mt-xs">Foto atual</div>
+            </div>
+            <div class="mt-xs">
+                <label class="image-upload" style="height: auto; padding: 10px;">
+                    <input type="file" accept="image/*" onchange="handleProdutoImageUpload(event)">
+                    <div class="text-sm">Alterar foto</div>
+                </label>
+            </div>
+        `;
+    }
+}
+
+function openAtribuirMarceneiroModal(produtoId) {
+    const produto = state.produtosPendentes.find(p => p.id === produtoId);
+    if (!produto) return;
+
+    const marceneirosOptions = state.marceneiros.map(m =>
+        `<option value="${m.id}">${m.nome}</option>`
+    ).join('');
+
+    document.getElementById('modal-container').innerHTML = `
+        <div class="modal-overlay" onclick="closeModal(event)">
+            <div class="modal" onclick="event.stopPropagation()">
+                <div class="modal-header">
+                    <div class="modal-title">Atribuir ao Marceneiro</div>
+                    <button class="modal-close" onclick="closeModal()">&times;</button>
+                </div>
+                
+                <form id="atribuir-form">
+                    <input type="hidden" id="produto_id_converter" value="${produtoId}">
+                    <div class="modal-body">
+                        <div class="card" style="background: #2a2a3e; padding: 1rem; margin-bottom: 1rem;">
+                            <div style="font-size: 0.875rem; color: #a0a0b0; margin-bottom: 0.5rem;">Produto selecionado:</div>
+                            <div style="font-weight: 600; color: #fff;">${produto.nome_produto}</div>
+                            ${produto.descricao ? `<div style="font-size: 0.875rem; color: #a0a0b0; margin-top: 0.25rem;">${produto.descricao}</div>` : ''}
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Marceneiro *</label>
+                            <select class="form-select" id="marceneiro_id_atribuir" required>
+                                <option value="">Selecione...</option>
+                                ${marceneirosOptions}
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Valor (R$) *</label>
+                            <input type="number" class="form-input" id="valor_atribuir" required placeholder="0,00" step="0.01" min="0">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Prazo *</label>
+                            <input type="date" class="form-input" id="prazo_atribuir" required>
+                        </div>
+                    </div>
+                    
+                    <div class="modal-footer">
+                        <button type="submit" class="btn btn-primary btn-block">
+                            ✓ Criar Serviço e Atribuir
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    `;
+
+    document.getElementById('atribuir-form').addEventListener('submit', handleConverterProduto);
+}
+
 function closeModal(event) {
     if (event && event.target !== event.currentTarget) return;
     document.getElementById('modal-container').innerHTML = '';
@@ -671,6 +869,124 @@ async function handleSalvarPagamento(e) {
         btn.textContent = '💰 Registrar Pagamento';
     }
 }
+
+// ========== HANDLERS PRODUTOS PENDENTES ==========
+
+let imagemProdutoSelecionada = null;
+
+window.handleProdutoImageUpload = function (event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    imagemProdutoSelecionada = file;
+
+    const reader = new FileReader();
+    reader.onload = function (e) {
+        document.getElementById('produto-image-upload-container').innerHTML = `
+            <div class="image-preview">
+                <img src="${e.target.result}" alt="Preview">
+                <button type="button" class="image-preview-remove" onclick="removeProdutoImage()">×</button>
+            </div>
+        `;
+    };
+    reader.readAsDataURL(file);
+};
+
+window.removeProdutoImage = function () {
+    imagemProdutoSelecionada = null;
+    document.getElementById('produto-image-upload-container').innerHTML = `
+        <label class="image-upload" id="produto-image-upload">
+            <input type="file" accept="image/*" onchange="handleProdutoImageUpload(event)">
+            <div class="image-upload-icon">📷</div>
+            <div class="image-upload-text">Clique para adicionar foto</div>
+        </label>
+    `;
+};
+
+async function handleSalvarProduto(e) {
+    e.preventDefault();
+
+    const btn = document.getElementById('btn-salvar-produto');
+    btn.disabled = true;
+    btn.textContent = 'Salvando...';
+
+    try {
+        const id = document.getElementById('produto-id').value;
+        const dados = {
+            nome_produto: document.getElementById('nome_produto').value,
+            descricao: document.getElementById('descricao_produto').value,
+            prioridade: document.getElementById('prioridade').value
+        };
+
+        let foto_url = null;
+        if (imagemProdutoSelecionada) {
+            foto_url = await api.uploadImagem(imagemProdutoSelecionada);
+            dados.foto_url = foto_url;
+        }
+
+        if (id) {
+            await api.atualizarProdutoPendente(id, dados);
+        } else {
+            await api.criarProdutoPendente(dados);
+        }
+
+        imagemProdutoSelecionada = null;
+        closeModal();
+        await carregarDados();
+        renderDashboard();
+    } catch (error) {
+        console.error('Erro ao salvar produto:', error);
+        alert('Erro ao salvar produto. Tente novamente.');
+        btn.disabled = false;
+        btn.textContent = id ? 'Atualizar Produto' : 'Salvar Produto';
+    }
+}
+
+window.handleExcluirProduto = async function (id) {
+    if (!confirm('Tem certeza que deseja excluir este produto?')) return;
+
+    try {
+        await api.deleteProdutoPendente(id);
+        await carregarDados();
+        renderDashboard();
+    } catch (error) {
+        console.error('Erro ao excluir produto:', error);
+        alert('Erro ao excluir produto. Tente novamente.');
+    }
+};
+
+async function handleConverterProduto(e) {
+    e.preventDefault();
+
+    const btn = e.target.querySelector('button[type="submit"]');
+    btn.disabled = true;
+    btn.textContent = 'Convertendo...';
+
+    try {
+        const produtoId = document.getElementById('produto_id_converter').value;
+        const dadosServico = {
+            marceneiro_id: document.getElementById('marceneiro_id_atribuir').value,
+            valor: document.getElementById('valor_atribuir').value,
+            prazo: document.getElementById('prazo_atribuir').value
+        };
+
+        await api.converterProdutoEmServico(produtoId, dadosServico);
+
+        closeModal();
+        await carregarDados();
+        renderDashboard();
+    } catch (error) {
+        console.error('Erro ao converter produto:', error);
+        alert('Erro ao converter produto em serviço. Tente novamente.');
+        btn.disabled = false;
+        btn.textContent = '✓ Criar Serviço e Atribuir';
+    }
+}
+
+// Exportar funções globais
+window.openNovoProdutoModal = openNovoProdutoModal;
+window.openEditarProdutoModal = openEditarProdutoModal;
+window.openAtribuirMarceneiroModal = openAtribuirMarceneiroModal;
 
 window.iniciarServico = async function (id) {
     try {
