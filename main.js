@@ -314,39 +314,49 @@ function renderProdutosTab() {
 }
 
 function renderPagamentosTab() {
-    return `
+    const container = `
         <div class="service-list">
             <button class="btn btn-primary btn-block" onclick="openNovoPagamentoModal()">
                 💰 Registrar Pagamento
             </button>
-            <div class="mt-md">
-                ${renderHistoricoPagamentos()}
+            <div class="mt-md" id="pagamentos-lista">
+                <div class="empty-state"><div class="spinner"></div></div>
             </div>
         </div>
     `;
-}
 
-async function renderHistoricoPagamentos() {
-    try {
-        const pagamentos = await api.getPagamentos();
-
-        if (pagamentos.length === 0) {
-            return '<div class="empty-state"><p>Nenhum pagamento registrado</p></div>';
-        }
-
-        return pagamentos.map(p => `
-            <div class="history-item">
-                <div class="history-icon expense">💸</div>
-                <div class="history-details">
-                    <div class="history-title">${p.marceneiro?.nome || 'Marceneiro'}</div>
-                    <div class="history-date">${formatarData(p.data)} - ${p.observacao || 'Pagamento semanal'}</div>
+    setTimeout(async () => {
+        const listaDiv = document.getElementById('pagamentos-lista');
+        if (!listaDiv) return;
+        try {
+            const pagamentos = await api.getPagamentos();
+            if (pagamentos.length === 0) {
+                listaDiv.innerHTML = '<div class="empty-state"><p>Nenhum pagamento registrado</p></div>';
+                return;
+            }
+            listaDiv.innerHTML = pagamentos.map(p => `
+                <div class="card service-card" style="margin-bottom: var(--space-md);">
+                    <div class="service-header">
+                        <div class="service-title">${p.marceneiro?.nome || 'Marceneiro'}</div>
+                        <span class="badge badge-concluido">Pago</span>
+                    </div>
+                    <p class="text-muted">${p.observacao || 'Pagamento semanal'}</p>
+                    <div class="service-meta">
+                        <div class="service-meta-item">📅 ${formatarData(p.data)}</div>
+                    </div>
+                    <div class="service-value" style="color: var(--danger);">-${formatarMoeda(p.valor)}</div>
+                    <div class="service-actions">
+                        <button class="btn btn-secondary btn-sm" onclick="openEditarPagamentoModal('${p.id}')">✏️ Editar</button>
+                        <button class="btn btn-danger btn-sm" onclick="handleExcluirPagamento('${p.id}')">🗑️ Excluir</button>
+                    </div>
                 </div>
-                <div class="history-value negative">-${formatarMoeda(p.valor)}</div>
-            </div>
-        `).join('');
-    } catch (error) {
-        return '<div class="empty-state"><p>Erro ao carregar pagamentos</p></div>';
-    }
+            `).join('');
+        } catch (error) {
+            listaDiv.innerHTML = '<div class="empty-state"><p>Erro ao carregar pagamentos</p></div>';
+        }
+    }, 50);
+
+    return container;
 }
 
 // ========== DASHBOARD MARCENEIRO ==========
@@ -1036,6 +1046,112 @@ window.handleLogout = async function () {
 window.closeModal = closeModal;
 window.openNovoServicoModal = openNovoServicoModal;
 window.openNovoPagamentoModal = openNovoPagamentoModal;
+
+// ========== EDITAR / EXCLUIR PAGAMENTO ==========
+
+window.openEditarPagamentoModal = async function (id) {
+    // Buscar dados do pagamento
+    let pagamento;
+    try {
+        const pagamentos = await api.getPagamentos();
+        pagamento = pagamentos.find(p => p.id === id);
+    } catch (e) {
+        alert('Erro ao buscar pagamento');
+        return;
+    }
+    if (!pagamento) return;
+
+    const marceneirosOptions = state.marceneiros.map(m =>
+        `<option value="${m.id}" ${m.id === pagamento.marceneiro_id ? 'selected' : ''}>${m.nome}</option>`
+    ).join('');
+
+    document.getElementById('modal-container').innerHTML = `
+        <div class="modal-overlay" onclick="closeModal(event)">
+            <div class="modal" onclick="event.stopPropagation()">
+                <div class="modal-header">
+                    <div class="modal-title">Editar Pagamento</div>
+                    <button class="modal-close" onclick="closeModal()">&times;</button>
+                </div>
+                
+                <form id="editar-pagamento-form">
+                    <input type="hidden" id="pagamento-edit-id" value="${pagamento.id}">
+                    <div class="modal-body">
+                        <div class="form-group">
+                            <label class="form-label">Marceneiro *</label>
+                            <select class="form-select" id="edit-marceneiro_id" required>
+                                <option value="">Selecione...</option>
+                                ${marceneirosOptions}
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Valor (R$) *</label>
+                            <input type="number" class="form-input" id="edit-valor" required placeholder="0,00" step="0.01" min="0" value="${pagamento.valor}">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Data *</label>
+                            <input type="date" class="form-input" id="edit-data" required value="${pagamento.data}">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Observação</label>
+                            <input type="text" class="form-input" id="edit-observacao" placeholder="Ex: Pagamento semanal" value="${pagamento.observacao || ''}">
+                        </div>
+                    </div>
+                    
+                    <div class="modal-footer">
+                        <button type="submit" class="btn btn-primary btn-block" id="btn-atualizar-pag">
+                            ✅ Atualizar Pagamento
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    `;
+
+    document.getElementById('editar-pagamento-form').addEventListener('submit', handleAtualizarPagamento);
+};
+
+async function handleAtualizarPagamento(e) {
+    e.preventDefault();
+
+    const btn = document.getElementById('btn-atualizar-pag');
+    btn.disabled = true;
+    btn.textContent = 'Salvando...';
+
+    try {
+        const id = document.getElementById('pagamento-edit-id').value;
+        await api.atualizarPagamento(id, {
+            marceneiro_id: document.getElementById('edit-marceneiro_id').value,
+            valor: document.getElementById('edit-valor').value,
+            data: document.getElementById('edit-data').value,
+            observacao: document.getElementById('edit-observacao').value
+        });
+
+        closeModal();
+        await carregarDados();
+        renderDashboard();
+    } catch (error) {
+        console.error('Erro ao atualizar:', error);
+        alert('Erro ao atualizar pagamento. Tente novamente.');
+        btn.disabled = false;
+        btn.textContent = '✅ Atualizar Pagamento';
+    }
+}
+
+window.handleExcluirPagamento = async function (id) {
+    if (!confirm('Tem certeza que deseja excluir este pagamento? Esta ação não pode ser desfeita.')) return;
+
+    try {
+        await api.deletePagamento(id);
+        await carregarDados();
+        renderDashboard();
+    } catch (error) {
+        console.error('Erro ao excluir:', error);
+        alert('Erro ao excluir pagamento. Verifique as permissões no Supabase.');
+    }
+};
 
 window.openEditarServicoModal = function (id) {
     const servico = state.servicos.find(s => s.id === id);

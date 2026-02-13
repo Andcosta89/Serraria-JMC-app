@@ -179,6 +179,28 @@ export async function criarPagamento(pagamento) {
     return data;
 }
 
+export async function atualizarPagamento(id, dados) {
+    const { data, error } = await supabase
+        .from('pagamentos')
+        .update(dados)
+        .eq('id', id)
+        .select()
+        .single();
+
+    if (error) throw error;
+    return data;
+}
+
+export async function deletePagamento(id) {
+    const { error } = await supabase
+        .from('pagamentos')
+        .delete()
+        .eq('id', id);
+
+    if (error) throw error;
+}
+
+
 // ========== FINANÇAS ==========
 
 export async function getResumoFinanceiro(marceneiro_id) {
