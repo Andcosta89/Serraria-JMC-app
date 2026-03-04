@@ -593,6 +593,86 @@ h3 {
     gap: var(--space-sm);
 }
 
+/* Marceneiro Group */
+.marceneiro-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+}
+
+.marceneiro-group-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--bg-card);
+    border: 1px solid rgba(46, 125, 50, 0.3);
+    border-radius: var(--radius-md);
+    padding: var(--space-md) var(--space-lg);
+    cursor: pointer;
+    -webkit-user-select: none;
+    user-select: none;
+    transition: background var(--transition-fast);
+    margin-bottom: var(--space-sm);
+}
+
+.marceneiro-group-header:hover {
+    background: var(--bg-input);
+    border-color: rgba(76, 175, 80, 0.5);
+}
+
+.marceneiro-group-info {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+}
+
+.marceneiro-group-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: var(--radius-full);
+    background: var(--accent-gradient);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: var(--font-size-sm);
+    color: white;
+    flex-shrink: 0;
+}
+
+.marceneiro-group-name {
+    font-weight: 600;
+    font-size: var(--font-size-md);
+    color: var(--text-primary);
+}
+
+.marceneiro-group-count {
+    font-size: var(--font-size-xs);
+    color: var(--text-muted);
+    background: rgba(255, 255, 255, 0.07);
+    padding: 2px 8px;
+    border-radius: var(--radius-sm);
+}
+
+.marceneiro-group-arrow {
+    font-size: var(--font-size-sm);
+    color: var(--accent-secondary);
+    transition: transform var(--transition-fast);
+}
+
+.marceneiro-group-body {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+    margin-bottom: var(--space-md);
+    overflow: hidden;
+    transition: opacity var(--transition-fast);
+}
+
+.marceneiro-group-body.collapsed {
+    display: none;
+}
+
 /* Service Card */
 .service-card {
     position: relative;

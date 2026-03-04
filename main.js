@@ -235,12 +235,44 @@ function renderServicosTab() {
         `;
     }
 
+    // Agrupar por marceneiro
+    const grupos = {};
+    for (const servico of servicosFiltrados) {
+        const nome = servico.marceneiro?.nome || 'Sem Marceneiro';
+        const id = servico.marceneiro_id || 'sem-marceneiro';
+        if (!grupos[id]) grupos[id] = { nome, servicos: [] };
+        grupos[id].servicos.push(servico);
+    }
+
     return `
         <div class="service-list">
-            ${servicosFiltrados.map(servico => renderServicoCard(servico, true)).join('')}
+            ${Object.entries(grupos).map(([grupoId, grupo]) => `
+                <div class="marceneiro-group" id="grupo-${grupoId}">
+                    <div class="marceneiro-group-header" onclick="toggleGrupoMarceneiro('${grupoId}')">
+                        <div class="marceneiro-group-info">
+                            <span class="marceneiro-group-avatar">${grupo.nome.charAt(0).toUpperCase()}</span>
+                            <span class="marceneiro-group-name">👷 ${grupo.nome}</span>
+                            <span class="marceneiro-group-count">${grupo.servicos.length} serviço${grupo.servicos.length !== 1 ? 's' : ''}</span>
+                        </div>
+                        <span class="marceneiro-group-arrow" id="arrow-${grupoId}">▼</span>
+                    </div>
+                    <div class="marceneiro-group-body" id="body-${grupoId}">
+                        ${grupo.servicos.map(servico => renderServicoCard(servico, true)).join('')}
+                    </div>
+                </div>
+            `).join('')}
         </div>
     `;
 }
+
+window.toggleGrupoMarceneiro = function (grupoId) {
+    const body = document.getElementById(`body-${grupoId}`);
+    const arrow = document.getElementById(`arrow-${grupoId}`);
+    if (!body) return;
+    const isOpen = !body.classList.contains('collapsed');
+    body.classList.toggle('collapsed', isOpen);
+    arrow.textContent = isOpen ? '▶' : '▼';
+};
 
 function renderMarceneirosTab() {
     return `
