@@ -441,6 +441,7 @@ function renderMarceneiroDashboard() {
                 <button class="tab active" data-tab="pendentes">Pendentes</button>
                 <button class="tab" data-tab="andamento">Em Andamento</button>
                 <button class="tab" data-tab="concluidos">Concluídos</button>
+                <button class="tab" data-tab="pagos">Pagos (Histórico)</button>
             </div>
             
             <div id="tab-content">
@@ -461,6 +462,7 @@ function renderMarceneiroDashboard() {
             let status = 'pendente';
             if (tabName === 'andamento') status = 'andamento';
             if (tabName === 'concluidos') status = 'concluido';
+            if (tabName === 'pagos') status = 'pago';
 
             document.getElementById('tab-content').innerHTML = renderServicosMarceneiroTab(status);
         });
@@ -468,13 +470,20 @@ function renderMarceneiroDashboard() {
 }
 
 function renderServicosMarceneiroTab(status) {
-    const servicos = state.servicos.filter(s => s.status === status);
+    let servicos;
+    
+    if (status === 'pago') {
+        servicos = state.servicos.filter(s => s.pago);
+    } else {
+        servicos = state.servicos.filter(s => s.status === status && !s.pago);
+    }
 
     if (servicos.length === 0) {
         const mensagens = {
             pendente: 'Nenhum serviço pendente',
             andamento: 'Nenhum serviço em andamento',
-            concluido: 'Nenhum serviço concluído'
+            concluido: 'Nenhum serviço concluído (aguardando pagamento)',
+            pago: 'Nenhum serviço pago no histórico'
         };
 
         return `
