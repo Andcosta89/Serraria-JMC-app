@@ -174,7 +174,12 @@ function renderAdminDashboard() {
                 <div class="stat-card ${state.filtroAdmin === 'concluido' ? 'active-filter' : ''}" 
                      onclick="filtrarServicosAdmin('concluido')" style="cursor: pointer">
                     <div class="stat-value positive">${stats.concluidos}</div>
-                    <div class="stat-label">Concluídos</div>
+                    <div class="stat-label">A Pagar</div>
+                </div>
+                <div class="stat-card ${state.filtroAdmin === 'pago' ? 'active-filter' : ''}" 
+                     onclick="filtrarServicosAdmin('pago')" style="cursor: pointer">
+                    <div class="stat-value" style="color: var(--text-secondary)">${stats.pagos}</div>
+                    <div class="stat-label">Pagos</div>
                 </div>
             </div>
             
@@ -221,8 +226,13 @@ function renderAdminDashboard() {
 function renderServicosTab() {
     let servicosFiltrados = state.servicos;
 
-    if (state.filtroAdmin !== 'todos') {
-        servicosFiltrados = state.servicos.filter(s => s.status === state.filtroAdmin);
+    if (state.filtroAdmin === 'pago') {
+        servicosFiltrados = state.servicos.filter(s => s.pago);
+    } else {
+        servicosFiltrados = state.servicos.filter(s => !s.pago);
+        if (state.filtroAdmin !== 'todos') {
+            servicosFiltrados = servicosFiltrados.filter(s => s.status === state.filtroAdmin);
+        }
     }
 
     if (servicosFiltrados.length === 0) {
@@ -488,7 +498,7 @@ function renderServicoCard(servico, isAdmin) {
     const statusBadge = {
         pendente: '<span class="badge badge-pendente">Pendente</span>',
         andamento: '<span class="badge badge-andamento">Em Andamento</span>',
-        concluido: '<span class="badge badge-concluido">Concluído</span>'
+        concluido: servico.pago ? '<span class="badge" style="background: rgba(160, 160, 184, 0.15); color: #a0a0b8; border: 1px solid rgba(160, 160, 184, 0.4);">✔ Pago</span>' : '<span class="badge badge-concluido">Concluído</span>'
     };
 
     const novoClass = !servico.visualizado && !isAdmin ? 'novo' : '';
@@ -529,10 +539,15 @@ function renderServicoCard(servico, isAdmin) {
             <div class="service-value">${formatarMoeda(servico.valor)}</div>
             
             ${actions}
+            ${isAdmin && servico.status === 'concluido' && !servico.pago ? `
+                <div class="service-actions mt-sm">
+                    <button class="btn btn-success btn-block" onclick="handleMarcarComoPago('${servico.id}')">✔ Prestar Conta</button>
+                </div>
+            ` : ''}
             ${isAdmin ? `
                 <div class="service-actions mt-sm">
                     <button class="btn btn-secondary btn-sm" onclick="openEditarServicoModal('${servico.id}')">✏️ Editar</button>
-                    <button class="btn btn-danger btn-sm" onclick="handleExcluirServico('${servico.id}')">🗑️ Excluir</button>
+                    ${!servico.pago ? `<button class="btn btn-danger btn-sm" onclick="handleExcluirServico('${servico.id}')">🗑️ Excluir</button>` : ''}
                 </div>
             ` : ''}
         </div>
@@ -1049,6 +1064,18 @@ window.concluirServico = async function (id) {
     } catch (error) {
         console.error('Erro:', error);
         alert('Erro ao atualizar status');
+    }
+};
+
+window.handleMarcarComoPago = async function (id) {
+    if (!confirm('Deseja marcar este serviço como Acertado/Pago? Ele será movido para o histórico.')) return;
+    try {
+        await api.marcarServicoComoPago(id);
+        await carregarDados();
+        renderDashboard();
+    } catch (error) {
+        console.error('Erro:', error);
+        alert('Erro ao marcar serviço como pago');
     }
 };
 

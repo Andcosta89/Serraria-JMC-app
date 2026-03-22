@@ -130,6 +130,10 @@ export async function atualizarStatus(id, status) {
     return atualizarServico(id, dados);
 }
 
+export async function marcarServicoComoPago(id) {
+    return atualizarServico(id, { pago: true });
+}
+
 // ========== USUÁRIOS (MARCENEIROS) ==========
 
 export async function getMarceneiros() {
@@ -270,14 +274,15 @@ export async function getHistoricoFinanceiro(marceneiro_id) {
 export async function getEstatisticasAdmin() {
     const { data: servicos } = await supabase
         .from('servicos')
-        .select('status, valor');
+        .select('status, valor, pago');
 
     const stats = {
-        total: servicos?.length || 0,
-        pendentes: servicos?.filter(s => s.status === 'pendente').length || 0,
-        emAndamento: servicos?.filter(s => s.status === 'andamento').length || 0,
-        concluidos: servicos?.filter(s => s.status === 'concluido').length || 0,
-        valorTotal: servicos?.reduce((acc, s) => acc + parseFloat(s.valor || 0), 0) || 0
+        total: servicos?.filter(s => !s.pago).length || 0,
+        pendentes: servicos?.filter(s => s.status === 'pendente' && !s.pago).length || 0,
+        emAndamento: servicos?.filter(s => s.status === 'andamento' && !s.pago).length || 0,
+        concluidos: servicos?.filter(s => s.status === 'concluido' && !s.pago).length || 0,
+        pagos: servicos?.filter(s => s.pago).length || 0,
+        valorTotal: servicos?.filter(s => !s.pago).reduce((acc, s) => acc + parseFloat(s.valor || 0), 0) || 0
     };
 
     return stats;
